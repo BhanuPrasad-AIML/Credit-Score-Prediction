@@ -1,0 +1,13 @@
+Age,Annual_Income,Monthly_Inhand_Salary,Num_Bank_Accounts,Num_Credit_Card,Interest_Rate,Num_of_Loan,Delay_from_due_date,Num_of_Delayed_Payment,Credit_Utilization_Ratio,Outstanding_Debt,Credit_History_Age,Credit_Score
+22,24000,1800,2,1,18,1,12,3,78.5,4200,18,Poor
+25,32000,2400,3,2,15,2,8,2,62.0,3100,30,Standard
+31,48000,3600,2,3,10,1,2,0,25.0,1200,72,Good
+40,72000,5400,1,2,7,1,0,0,12.0,500,120,Good
+29,36000,2700,4,3,20,4,20,5,88.0,6500,12,Poor
+35,56000,4200,2,2,9,2,3,1,35.0,1800,84,Standard
+23,21000,1600,5,4,22,5,25,7,94.0,7800,8,Poor
+45,85000,6400,2,2,6,1,0,0,9.0,300,180,Good
+27,40000,3000,3,2,13,2,5,1,48.0,2600,48,Standard
+38,68000,5100,2,3,8,1,1,0,18.0,900,96,Good
+26,28000,2100,4,3,19,3,16,4,81.0,5200,15,Poor
+33,52000,3900,2,2,11,2,4,1,31.0,1600,66,Standard
