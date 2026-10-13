@@ -1,0 +1,84 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Credit Score Result</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: #eef4ff;
+            padding: 40px;
+        }
+
+        .card {
+            background: white;
+            max-width: 500px;
+            margin: auto;
+            padding: 30px;
+            border-radius: 18px;
+            box-shadow: 0 5px 20px #ccd5e5;
+        }
+
+        .meter {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            margin: 25px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: conic-gradient(
+                #22c55e 0deg 180deg,
+                #e5e7eb 180deg 360deg
+            );
+            position: relative;
+        }
+
+        .inner {
+            width: 165px;
+            height: 165px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .score {
+            font-size: 34px;
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        a {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Your Credit Score</h1>
+
+        <div class="meter">
+            <div class="inner">
+                <div class="score">{{ prediction }}</div>
+                <div>Predicted Category</div>
+            </div>
+        </div>
+
+        <h2>Credit Score Result</h2>
+        <p>Your predicted category is <strong>{{ prediction }}</strong>.</p>
+
+        <a href="/">Check Again</a>
+    </div>
+</body>
+</html>
+```

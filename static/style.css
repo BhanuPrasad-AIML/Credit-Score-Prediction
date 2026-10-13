@@ -1,0 +1,252 @@
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f3f6fc;
+    color: #192943;
+}
+
+.topbar {
+    background: white;
+    padding: 18px 6%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e1e8f2;
+}
+
+.brand {
+    font-size: 20px;
+    font-weight: bold;
+    color: #142b4a;
+}
+
+.brand-icon {
+    background: #316cf4;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 10px;
+    margin-right: 8px;
+}
+
+.status {
+    font-size: 11px;
+    color: #316cf4;
+    font-weight: bold;
+}
+
+.container {
+    max-width: 900px;
+    width: calc(100% - 32px);
+    margin: auto;
+}
+
+.intro {
+    text-align: center;
+    padding: 40px 10px 25px;
+}
+
+.eyebrow {
+    color: #316cf4;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+h1 {
+    font-size: clamp(34px, 6vw, 50px);
+    line-height: 1.15;
+    color: #142b4a;
+}
+
+h1 span {
+    color: #316cf4;
+}
+
+.subtitle {
+    color: #718096;
+    max-width: 550px;
+    margin: auto;
+    line-height: 1.7;
+}
+
+.panel, .result-panel {
+    background: white;
+    padding: 28px;
+    border-radius: 16px;
+    border: 1px solid #e1e8f2;
+    box-shadow: 0 10px 30px #1929430d;
+    margin-bottom: 24px;
+}
+
+.panel-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+.panel-heading h2 {
+    margin: 0;
+    font-size: 22px;
+}
+
+.panel-heading p {
+    color: #718096;
+    font-size: 13px;
+}
+
+.step {
+    background: #edf3ff;
+    color: #316cf4;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.field label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    overflow-wrap: anywhere;
+}
+
+.field input, .field select {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px;
+    border: 1px solid #d8e1ef;
+    border-radius: 9px;
+    background: white;
+    font-size: 15px;
+    color: #192943;
+}
+
+.field input:focus, .field select:focus {
+    outline: 2px solid #b4caff;
+    border-color: #316cf4;
+}
+
+.predict-button {
+    width: 100%;
+    margin-top: 28px;
+    padding: 16px;
+    border: none;
+    border-radius: 10px;
+    background: #316cf4;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.predict-button:hover {
+    background: #2057d4;
+}
+
+.result-panel {
+    text-align: center;
+}
+
+.result-icon {
+    font-size: 30px;
+    color: #168348;
+}
+
+.result-value {
+    display: inline-block;
+    padding: 12px 24px;
+    margin: 15px 0;
+    background: #edf3ff;
+    color: #316cf4;
+    border-radius: 12px;
+    font-size: 32px;
+    font-weight: bold;
+    overflow-wrap: anywhere;
+}
+
+.result-note, .disclaimer {
+    color: #718096;
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+.reset-link {
+    display: inline-block;
+    margin-top: 12px;
+    color: #316cf4;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.alert {
+    background: #fff3e7;
+    color: #814616;
+    border: 1px solid #f3d1ac;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
+    overflow-wrap: anywhere;
+}
+
+.disclaimer {
+    text-align: center;
+    padding: 0 10px 25px;
+}
+
+footer {
+    text-align: center;
+    background: white;
+    padding: 22px;
+    border-top: 1px solid #e1e8f2;
+    color: #718096;
+    font-size: 12px;
+}
+
+@media (max-width: 600px) {
+    .topbar {
+        padding: 14px 16px;
+    }
+
+    .brand {
+        font-size: 16px;
+    }
+
+    .status {
+        font-size: 9px;
+    }
+
+    .intro {
+        padding-top: 28px;
+    }
+
+    .panel, .result-panel {
+        padding: 20px 15px;
+    }
+
+    .panel-heading h2 {
+        font-size: 18px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .field input, .field select {
+        font-size: 16px;
+    }
+}
