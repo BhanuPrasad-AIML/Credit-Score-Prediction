@@ -154,6 +154,14 @@
 
             <button type="submit">Predict Credit Score</button>
         </form>
+        
+{% if prediction is not none %}
+    <div class="result">
+        <h2>Credit Score Prediction</h2>
+        <p>{{ prediction }}</p>
+    </div>
+{% endif %}
+
 
         <p class="note">
             AIML Mini Project<br>
