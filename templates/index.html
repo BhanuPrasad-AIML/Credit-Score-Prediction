@@ -111,6 +111,35 @@
         {% endif %}
 
         <form method="POST" action="/">
+            
+<form method="POST" action="/">
+    {% for field in fields %}
+        <label for="{{ field.name }}">{{ field.label }}</label>
+
+        {% if field.type == "select" and field.options %}
+            <select id="{{ field.name }}" name="{{ field.name }}" required>
+                {% for option in field.options %}
+                    <option value="{{ option }}"
+                        {% if submitted.get(field.name, field.default|string) == option|string %}selected{% endif %}>
+                        {{ option }}
+                    </option>
+                {% endfor %}
+            </select>
+        {% else %}
+            <input
+                type="{{ 'number' if field.type == 'number' else 'text' }}"
+                id="{{ field.name }}"
+                name="{{ field.name }}"
+                value="{{ submitted.get(field.name, field.default|string) }}"
+                {% if field.type == "number" %}step="any" min="0"{% endif %}
+                required
+            >
+        {% endif %}
+    {% endfor %}
+
+    <button type="submit">Predict Credit Score</button>
+</form>
+
             <label for="income">Annual Income (₹)</label>
             <input
                 type="number"
