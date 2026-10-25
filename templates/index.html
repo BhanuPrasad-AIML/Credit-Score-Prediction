@@ -1,202 +1,117 @@
-```html
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Credit Score Prediction</title>
-
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            padding: 25px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #0f172a, #2563eb);
-        }
-
-        .container {
-            width: 100%;
-            max-width: 500px;
-            padding: 35px;
-            background: white;
-            border-radius: 18px;
-            box-shadow: 0 12px 40px #0004;
-        }
-
-        h1 {
-            text-align: center;
-            color: #1e3a8a;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            text-align: center;
-            color: #64748b;
-            margin-bottom: 25px;
-        }
-
-        label {
-            display: block;
-            margin: 16px 0 7px;
-            font-weight: bold;
-            color: #334155;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 15px;
-        }
-
-        input:focus {
-            outline: 2px solid #93c5fd;
-            border-color: #2563eb;
-        }
-
-        button {
-            width: 100%;
-            padding: 14px;
-            margin-top: 25px;
-            border: none;
-            border-radius: 8px;
-            background: #2563eb;
-            color: white;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #1d4ed8;
-        }
-
-        .error {
-            padding: 12px;
-            color: #b91c1c;
-            background: #fee2e2;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .note {
-            margin-top: 20px;
-            text-align: center;
-            color: #64748b;
-            font-size: 12px;
-            line-height: 1.5;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
 <body>
-    <main class="container">
-        <h1>Credit Score Prediction</h1>
+    <main class="page">
+        <header class="header">
+            <div class="logo">CS</div>
+            <div>
+                <h1>Credit Score Prediction</h1>
+                <p>Understand your credit profile</p>
+            </div>
+        </header>
 
-        <p class="subtitle">
-            Machine Learning Based Prediction System
-        </p>
+        <section class="hero">
+            <span class="eyebrow">AI / ML PROJECT</span>
+            <h2>Check your credit score category</h2>
+            <p>Enter the financial details below to see the model's predicted category.</p>
+        </section>
 
-        {% if error %}
-            <p class="error">{{ error }}</p>
+        {% if error_message %}
+        <div class="message error">
+            {{ error_message }}
+        </div>
         {% endif %}
 
-        <form method="POST" action="/">
-            
-<form method="POST" action="/">
-    {% for field in fields %}
-        <label for="{{ field.name }}">{{ field.label }}</label>
+        <section class="layout">
+            <div class="panel">
+                <h3>Financial information</h3>
+                <p class="muted">Complete the four fields to make a prediction.</p>
 
-        {% if field.type == "select" and field.options %}
-            <select id="{{ field.name }}" name="{{ field.name }}" required>
-                {% for option in field.options %}
-                    <option value="{{ option }}"
-                        {% if submitted.get(field.name, field.default|string) == option|string %}selected{% endif %}>
-                        {{ option }}
-                    </option>
-                {% endfor %}
-            </select>
-        {% else %}
-            <input
-                type="{{ 'number' if field.type == 'number' else 'text' }}"
-                id="{{ field.name }}"
-                name="{{ field.name }}"
-                value="{{ submitted.get(field.name, field.default|string) }}"
-                {% if field.type == "number" %}step="any" min="0"{% endif %}
-                required
-            >
-        {% endif %}
-    {% endfor %}
+                {% if columns %}
+                <form method="POST" action="/">
+                    {% for column in columns %}
+                    <div class="field">
+                        <label for="{{ column }}">{{ column.replace('_', ' ') }}</label>
+                        <input
+                            type="number"
+                            step="any"
+                            id="{{ column }}"
+                            name="{{ column }}"
+                            value="{{ submitted.get(column, '') }}"
+                            placeholder="Enter {{ column.replace('_', ' ')|lower }}"
+                            required>
+                    </div>
+                    {% endfor %}
 
-    <button type="submit">Predict Credit Score</button>
-</form>
+                    <button type="submit">Predict Credit Score <span>→</span></button>
+                </form>
+                {% else %}
+                <p class="message error">The model has no available input fields. Check the dataset.</p>
+                {% endif %}
+            </div>
 
-            <label for="income">Annual Income (₹)</label>
-            <input
-                type="number"
-                id="income"
-                name="income"
-                min="0"
-                step="any"
-                required
-            >
+            <div class="panel result-panel">
+                <div class="result-top">
+                    <span class="result-icon">✦</span>
+                    <span class="muted">PREDICTION RESULT</span>
+                </div>
 
-            <label for="debt">Outstanding Debt (₹)</label>
-            <input
-                type="number"
-                id="debt"
-                name="debt"
-                min="0"
-                step="any"
-                required
-            >
+                {% if result and result.prediction %}
+                    <h3>Your predicted category</h3>
+                    <div class="score">{{ result.prediction }}</div>
+                    <p class="muted">This is the category predicted by the demonstration model.</p>
 
-            <label for="payment">Number of Late Payments</label>
-            <input
-                type="number"
-                id="payment"
-                name="payment"
-                min="0"
-                step="1"
-                required
-            >
+                    {% if result.accuracy is not none %}
+                    <div class="accuracy">
+                        <span>Test-set accuracy</span>
+                        <strong>{{ result.accuracy }}%</strong>
+                    </div>
+                    {% endif %}
 
-            <label for="utilization">Credit Utilization (%)</label>
-            <input
-                type="number"
-                id="utilization"
-                name="utilization"
-                min="0"
-                max="100"
-                step="any"
-                required
-            >
+                    <div class="meter">
+                        <div class="meter-track">
+                            {% if result.prediction|lower == 'good' %}
+                                <div class="meter-fill good"></div>
+                            {% elif result.prediction|lower == 'standard' %}
+                                <div class="meter-fill standard"></div>
+                            {% else %}
+                                <div class="meter-fill poor"></div>
+                            {% endif %}
+                        </div>
+                        <div class="meter-labels">
+                            <span>Poor</span>
+                            <span>Standard</span>
+                            <span>Good</span>
+                        </div>
+                    </div>
+                {% elif result and result.error %}
+                    <div class="message error">{{ result.error }}</div>
+                {% else %}
+                    <h3>Your result will appear here</h3>
+                    <p class="muted">Enter your details and select Predict Credit Score.</p>
+                    <div class="empty-meter">
+                        <div></div>
+                    </div>
+                    <div class="meter-labels">
+                        <span>Poor</span>
+                        <span>Standard</span>
+                        <span>Good</span>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
 
-            <button type="submit">Predict Credit Score</button>
-        </form>
-        
-{% if prediction is not none %}
-    <div class="result">
-        <h2>Credit Score Prediction</h2>
-        <p>{{ prediction }}</p>
-    </div>
-{% endif %}
-
-
-        <p class="note">
-            AIML Mini Project<br>
-            Educational demonstration only.
-        </p>
+        <footer>
+            <p>Credit Score Prediction · Educational demonstration</p>
+            <p class="disclaimer">Uses synthetic sample data. Predictions are not financial advice or a real credit assessment.</p>
+        </footer>
     </main>
 </body>
 </html>
-```
