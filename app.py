@@ -1,237 +1,188 @@
 
-import os
-import pandas as pd
-
 from flask import Flask, render_template, request
+import pandas as pd
+from pathlib import Path
 from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 
 app = Flask(__name__)
+BASE_DIR = Path(__file__).resolve().parent
+DATA_FILE = BASE_DIR / "credit_data.csv"
 
-# Project paths
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(BASE_DIR, "credit_data.csv")
-
-# Possible target column names
-TARGET_COLUMNS = [
-    "Credit_Score",
-    "Credit Score",
-    "credit_score",
-    "CreditScore",
-    "Credit_Category",
-    "Credit_Category_Label",
-]
+model = None
+feature_columns = []
+score_accuracy = None
+error_message = None
 
 
 def train_model():
-    if not os.path.exists(DATA_PATH):
-        raise FileNotFoundError(
-            "credit_data.csv is missing. Put it beside app.py."
+    global model, feature_columns, score_accuracy, error_message
+
+    if not DATA_FILE.exists():
+        error_message = (
+            "Dataset not found. Please place credit_data.csv "
+            "inside the Credit_Score_Prediction_New folder."
         )
+        return
 
-    data = pd.read_csv(DATA_PATH)
-    data.columns = data.columns.astype(str).str.strip()
-    data = data.dropna(axis=1, how="all")
+    try:
+        data = pd.read_csv(DATA_FILE)
+        data.columns = data.columns.str.strip()
 
-    if data.empty or len(data.columns) < 2:
-        raise ValueError(
-            "Your CSV must contain data and at least two columns."
-        )
+        target = "Credit_Score"
+        if target not in data.columns:
+            error_message = "The CSV must contain a Credit_Score column."
+            return
 
-    # Find the prediction target
-    target = next(
-        (col for col in TARGET_COLUMNS if col in data.columns),
-        data.columns[-1]
-    )
+        data = data.dropna(subset=[target])
+        X = data.drop(columns=[target]).copy()
+        y = data[target].astype(str).str.strip()
 
-    data = data.dropna(subset=[target]).copy()
-    data[target] = data[target].astype(str).str.strip()
-    data = data[data[target] != ""]
+        # Remove identifiers and columns that cannot be used as inputs.
+        excluded = [
+            col for col in X.columns
+            if col.strip().lower() in {
+                "id", "customer_id", "name", "ssn"
+            }
+        ]
+        X = X.drop(columns=excluded, errors="coerce")
 
-    # Remove common ID fields from model inputs
-    excluded = {
-        "id", "customer_id", "customerid", "name",
-        "ssn", "social_security_number", "index"
-    }
+        if X.empty or len(data) < 5 or y.nunique() < 2:
+            error_message = (
+                "The dataset needs at least five usable rows "
+                "and at least two Credit_Score categories."
+            )
+            return
 
-    features = [
-        col for col in data.columns
-        if col != target
-        and col.lower().replace(" ", "_") not in excluded
-        and not col.lower().startswith("unnamed:")
-        and not col.lower().endswith("_id")
-    ]
+        feature_columns = list(X.columns)
 
-    if not features:
-        raise ValueError("No usable input columns were found.")
+        numeric_columns = X.select_dtypes(
+            include=["number"]
+        ).columns.tolist()
+        categorical_columns = [
+            col for col in X.columns if col not in numeric_columns
+        ]
 
-    X = data[features].copy()
-    y = data[target]
+        numeric_pipeline = Pipeline([
+            ("imputer", SimpleImputer(strategy="median")),
+            ("scaler", StandardScaler())
+        ])
 
-    # Convert numeric-looking text to numeric values
-    for col in X.columns:
-        if X[col].dtype == "object":
-            converted = pd.to_numeric(X[col], errors="coerce")
-            if converted.notna().mean() >= 0.8:
-                X[col] = converted
+        categorical_pipeline = Pipeline([
+            ("imputer", SimpleImputer(strategy="most_frequent")),
+            ("encoder", OneHotEncoder(handle_unknown="ignore"))
+        ])
 
-    numeric = X.select_dtypes(
-        include=["number", "bool"]
-    ).columns.tolist()
-
-    categorical = [
-        col for col in X.columns if col not in numeric
-    ]
-
-    transformers = []
-
-    if numeric:
-        transformers.append((
-            "numeric",
-            Pipeline([
-                ("imputer", SimpleImputer(strategy="median"))
-            ]),
-            numeric
-        ))
-
-    if categorical:
-        transformers.append((
-            "categorical",
-            Pipeline([
-                ("imputer", SimpleImputer(
-                    strategy="most_frequent"
-                )),
-                ("encoder", OneHotEncoder(
-                    handle_unknown="ignore"
-                ))
-            ]),
-            categorical
-        ))
-
-    preprocessing = ColumnTransformer(transformers)
-
-    model = Pipeline([
-        ("preprocessing", preprocessing),
-        ("classifier", DecisionTreeClassifier(
-            max_depth=8,
-            random_state=42,
-            class_weight="balanced"
-        ))
-    ])
-
-    model.fit(X, y)
-
-    # Generate fields for the prediction form
-    fields = []
-
-    for col in features:
-        if col in numeric:
-            values = X[col].dropna()
-            default = (
-                float(values.median())
-                if not values.empty else 0
+        transformers = []
+        if numeric_columns:
+            transformers.append(
+                ("numeric", numeric_pipeline, numeric_columns)
+            )
+        if categorical_columns:
+            transformers.append(
+                ("categorical", categorical_pipeline, categorical_columns)
             )
 
-            fields.append({
-                "name": col,
-                "label": col.replace("_", " "),
-                "type": "number",
-                "default": default,
-                "options": []
-            })
+        preprocessing = ColumnTransformer(transformers=transformers)
+
+        model_pipeline = Pipeline([
+            ("preprocessing", preprocessing),
+            ("classifier", RandomForestClassifier(
+                n_estimators=150,
+                random_state=42,
+                class_weight="balanced"
+            ))
+        ])
+
+        # Use a test split only when each class has enough examples.
+        class_counts = y.value_counts()
+        can_split = (
+            len(data) >= 10
+            and class_counts.min() >= 2
+        )
+
+        if can_split:
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=0.2, random_state=42, stratify=y
+            )
+            model_pipeline.fit(X_train, y_train)
+            score_accuracy = round(
+                accuracy_score(y_test, model_pipeline.predict(X_test))
+                * 100, 1
+            )
         else:
-            values = X[col].dropna().astype(str).str.strip()
-            counts = values.value_counts()
-            default = (
-                str(counts.index[0])
-                if not counts.empty else ""
-            )
+            model_pipeline.fit(X, y)
+            score_accuracy = None
 
-            options = (
-                counts.index.tolist()
-                if 1 < len(counts) <= 30 else []
-            )
+        model = model_pipeline
+        error_message = None
 
-            fields.append({
-                "name": col,
-                "label": col.replace("_", " "),
-                "type": "select" if options else "text",
-                "default": default,
-                "options": options
-            })
-
-    return model, target, fields, len(data)
+    except Exception as exc:
+        model = None
+        error_message = f"Could not train the model: {exc}"
 
 
-try:
-    model, target_column, fields, total_rows = train_model()
-    startup_error = None
-except Exception as exc:
-    model = None
-    target_column = None
-    fields = []
-    total_rows = 0
-    startup_error = str(exc)
+train_model()
 
 
 @app.route("/", methods=["GET", "POST"])
 def home():
-    prediction = None
+    result = None
     submitted = {}
-    error = startup_error
 
-    if request.method == "POST" and model is not None:
-        try:
-            values = {}
+    if request.method == "POST":
+        submitted = request.form.to_dict()
 
-            for field in fields:
-                name = field["name"]
-                raw = request.form.get(name, "").strip()
-                submitted[name] = raw
+        if model is None:
+            result = {
+                "error": error_message or "The prediction model is not ready."
+            }
+        else:
+            try:
+                row = {}
+                for column in feature_columns:
+                    value = submitted.get(column, "").strip()
+                    if value == "":
+                        row[column] = None
+                    else:
+                        row[column] = value
 
-                if raw == "":
-                    values[name] = None
-                elif field["type"] == "number":
-                    values[name] = float(raw)
-                else:
-                    values[name] = raw
+                input_data = pd.DataFrame([row])
 
-            input_data = pd.DataFrame(
-                [values],
-                columns=[field["name"] for field in fields]
-            )
+                # Convert fields to numeric when the training data used numbers.
+                for column in feature_columns:
+                    if column in input_data.columns:
+                        input_data[column] = pd.to_numeric(
+                            input_data[column], errors="coerce"
+                        )
 
-            prediction = str(model.predict(input_data)[0])
+                prediction = model.predict(input_data)[0]
 
-        except (ValueError, TypeError):
-            error = (
-                "Please enter valid values in all fields "
-                "and check your numeric inputs."
-            )
-        except Exception:
-            error = (
-                "Prediction failed. Check the dataset "
-                "and the submitted values."
-            )
+                result = {
+                    "prediction": str(prediction),
+                    "accuracy": score_accuracy
+                }
+            except Exception as exc:
+                result = {
+                    "error": (
+                        "Prediction failed. Check that all input fields "
+                        f"match the dataset. Details: {exc}"
+                    )
+                }
 
     return render_template(
         "index.html",
-        fields=fields,
-        prediction=prediction,
-        error=error,
-        target_column=target_column,
-        row_count=total_rows,
-        class_count=(
-            len(model.named_steps["classifier"].classes_)
-            if model is not None else 0
-        ),
-        submitted=submitted
+        columns=feature_columns,
+        result=result,
+        submitted=submitted,
+        error_message=error_message
     )
 
 
 if __name__ == "__main__":
-    # Debug mode stays off for safer local testing.
-    app.run(host="127.0.0.1", port=5000, debug=False)
+    app.run(debug=True)
